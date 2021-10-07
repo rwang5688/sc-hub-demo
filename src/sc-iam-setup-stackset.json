@@ -1,0 +1,167 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "IAM Setup for Demo Portfolio in AWS Service Catalog (fdp-1qr5bu943)",
+    "Metadata": {
+      "AWS::CloudFormation::Interface": {
+          "ParameterGroups": [
+              {
+                  "Label": {
+                      "default": "IAM Role Setup Options"
+                  },
+                  "Parameters": [
+                      "CreateLaunchConstraintRole",
+                      "LaunchConstraintRoleName",
+                      "CreateSCEndUserRole",
+                      "SCEndUserRoleName"
+                  ]
+              }
+          ]
+      }
+    },
+    "Parameters": {
+        "CreateSCEndUserRole": {
+          "Type":"String",
+          "Description":"Select yes if you want to create end user IAM role across all AWS accounts for your Service Catalog portfolios",
+          "AllowedValues": ["Yes", "No"]
+        },
+        "SCEndUserRoleName": {
+          "Type":"String",
+          "Description":"The name of a role which can execute products in this portfolio (must be pre-existing in the account)"
+        },
+        "CreateLaunchConstraintRole": {
+          "Type":"String",
+          "Description":"Select yes if you want to create AWS Service Catalog launch constraint IAM role across all AWS accounts",
+          "AllowedValues": ["Yes", "No"]
+        },
+        "LaunchConstraintRoleName": {
+          "Type":"String",
+          "Description":"Name of the launch constraint IAM role for the AWS Service Catalog portfolio to be created across accounts"
+        }
+    },
+    "Conditions":{
+        "CreateLaunchConstraint" : {"Fn::Equals" : [{"Ref" : "CreateLaunchConstraintRole"}, "Yes"]},
+        "CreateSCEndUserRole" : {"Fn::Equals" : [{"Ref" : "CreateSCEndUserRole"}, "Yes"]}
+    },
+    "Resources": {     
+        "LaunchConstraintRole": {
+          "Type": "AWS::IAM::Role",
+          "Condition": "CreateLaunchConstraint",
+          "Properties": {
+              "RoleName": {"Ref": "LaunchConstraintRoleName"},
+              "ManagedPolicyArns": [
+                "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+                "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+              ],
+              "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                      {
+                          "Effect": "Allow",
+                          "Principal": {
+                              "Service": [
+                                  "servicecatalog.amazonaws.com"
+                              ]
+                          },
+                          "Action": [
+                              "sts:AssumeRole"
+                          ]
+                      }
+                  ]
+              },
+              "Path": "/",
+              "Policies": [
+                  {
+                      "PolicyName": "root",
+                      "PolicyDocument": {
+                          "Version": "2012-10-17",
+                          "Statement": [
+                              {
+                                  "Effect": "Allow",
+                                  "Action": [
+                                    "servicecatalog:ListServiceActionsForProvisioningArtifact",
+                                    "servicecatalog:ExecuteprovisionedProductServiceAction",
+                                    "iam:AddRoleToInstanceProfile",
+                                    "iam:ListRolePolicies",
+                                    "iam:ListPolicies",
+                                    "iam:DeleteRole",
+                                    "iam:GetRole",
+                                    "iam:CreateInstanceProfile",
+                                    "iam:PassRole",
+                                    "iam:DeleteInstanceProfile",
+                                    "iam:ListRoles",
+                                    "iam:RemoveRoleFromInstanceProfile",
+                                    "iam:CreateRole",
+                                    "iam:getRolePolicy",
+                                    "iam:PutRolePolicy",
+                                    "iam:DetachRolePolicy",
+                                    "iam:AttachRolePolicy",
+                                    "iam:DeleteRolePolicy",
+                                    "iam:UntagRole",
+                                    "iam:TagRole",
+                                    "iam:TagUser",
+                                    "iam:UntagUser",
+                                    "cloudformation:DescribeStackResource",
+                                    "cloudformation:DescribeStackResources",
+                                    "cloudformation:GetTemplate",
+                                    "cloudformation:List*",
+                                    "cloudformation:DescribeStackEvents",
+                                    "cloudformation:DescribeStacks",
+                                    "cloudformation:CreateStack",
+                                    "cloudformation:DeleteStack",
+                                    "cloudformation:DescribeStackEvents",
+                                    "cloudformation:DescribeStacks",
+                                    "cloudformation:GetTemplateSummary",
+                                    "cloudformation:SetStackPolicy",
+                                    "cloudformation:ValidateTemplate",
+                                    "cloudformation:UpdateStack",
+                                    "s3:GetObject"
+                                  ],
+                                  "Resource": "*"
+                              }
+                          ]
+                      }
+                  }
+              ]
+          }
+        },
+        "SCEndUserRole": {
+          "Type": "AWS::IAM::Role",
+          "Condition": "CreateSCEndUserRole",
+          "Properties": {
+              "RoleName": {"Ref": "SCEndUserRoleName"},
+              "ManagedPolicyArns": [
+                "arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess"
+              ],
+              "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                      {
+                          "Effect": "Allow",
+                          "Principal": {
+                              "AWS": [
+                                {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}
+                              ]
+                          },
+                          "Action": [
+                              "sts:AssumeRole"
+                          ]
+                      }
+                  ]
+              },
+              "Path": "/"
+          }
+        }
+    },
+    "Outputs": {
+		  "LaunchConstraintRoleArn":{
+          "Condition":"CreateLaunchConstraint",
+          "Value": {"Fn::GetAtt":["LaunchConstraintRole","Arn"]},
+          "Description": "ARN of the launch constraint role created for your AWS Service Catalog portfolio"
+        },
+        "SCEndUserRoleArn":{
+          "Condition":"CreateSCEndUserRole",
+          "Value": {"Fn::GetAtt":["SCEndUserRole","Arn"]},
+          "Description": "ARN of the end user role created for your AWS Service Catalog portfolio"
+        }
+    }
+}
