@@ -1,0 +1,200 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "IAM and TagOption assignment for Demo Portfolio in AWS Service Catalog (fdp-1qr5btaug)",
+    "Metadata": {
+      "AWS::CloudFormation::Interface": {
+          "ParameterGroups": [
+              {
+                  "Label": {
+                      "default": "AWS SC Portfolio Information"
+                  },
+                  "Parameters": [
+                      "PortfolioName"
+                  ]
+              },
+              {
+                  "Label": {
+                      "default": "AWS SC End User Information"
+                  },
+                  "Parameters": [
+                      "LinkEndUserRole",
+                      "SCEndUserRoleName"
+                  ]
+              },
+              {
+                  "Label": {
+                      "default": "(OPTIONAL) Sample TagOption Setup Options"
+                  },
+                  "Parameters": [
+                      "AddTagOptions"
+                    ]
+              }
+          ]
+      }
+    },
+    "Mappings" : {
+      "RegionAndPortfolioNameToPortfolioID" : {
+        "us-east-1": {
+          "SCHubPortfolioDemo": "<ADD_PORTFOLIO_ID_FOR_US_EAST_1>"
+        },
+        "us-east-2" : {
+          "SCHubPortfolioDemo": "<ADD_PORTFOLIO_ID_FOR_US_EAST_2>"
+        }
+      }
+      },
+    "Parameters": {
+        "PortfolioName": {
+          "Type":"String",
+          "Description":"Portfolio Name of the AWS Service Catalog portfolio that is shared to AWS Organizations or AWS Accounts",
+          "Default": "SCHubPortfolioDemo"
+      },
+        "SCEndUserRoleName": {
+            "Type":"String",
+            "Description":"The name of a role which can execute products in this portfolio (must be pre-existing in all the accounts). Leave blank if no assignment required."
+        },
+        "LinkEndUserRole": {
+          "Type":"String",
+          "Description":"Determines if an end user role is to be added to your portfolio",
+          "AllowedValues": ["Yes", "No"]
+        },
+        "AddTagOptions": {
+          "Type":"String",
+          "Description":"Determines if tagOptions are to be added to your portfolio",
+          "AllowedValues": ["Yes", "No"]
+        }
+      },
+    "Conditions":{
+        "AddTagOptions" : {"Fn::Equals" : [{"Ref" : "AddTagOptions"}, "Yes"]},
+        "LinkEndUserRole" : {"Fn::Equals" : [{"Ref" : "LinkEndUserRole"}, "Yes"]}
+          },
+    "Resources": {
+        "LinkSCEndUserRole":{
+          "Type" : "AWS::ServiceCatalog::PortfolioPrincipalAssociation",
+          "Condition":"LinkEndUserRole",
+          "Properties" : {
+            "PrincipalARN" : {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/${SCEndUserRoleName}"},
+            "PortfolioId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "PrincipalType" : "IAM"
+          }
+        },
+        "productEnvironmentProd" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "PROD",
+            "Key" : "serviceEnvironment"
+          }
+        },
+        "productEnvironmentProdassoc":{
+            "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+            "Condition": "AddTagOptions",
+            "Properties" : {
+              "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+              "TagOptionId" : { "Ref" : "productEnvironmentProd" }
+            }
+        },
+        "productEnvironmentQA" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "QA",
+            "Key" : "serviceEnvironment"
+          }
+        },
+        "productEnvironmentQAassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "productEnvironmentQA" }
+          }
+        },
+        "productEnvironmentDev" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "DEV",
+            "Key" : "serviceEnvironment"
+          }
+        },
+        "productEnvironmentDevassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "productEnvironmentDev" }
+          }
+        },
+        "ChargeBackDataInsights" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "DATA-INSIGHTS",
+            "Key" : "Chargeback"
+          }
+        },
+        "ChargeBackDataInsightsassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "ChargeBackDataInsights" }
+          }
+        },
+        "ChargeBackMK" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "MARKETING",
+            "Key" : "Chargeback"
+          }
+        },
+        "ChargeBackMKassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "ChargeBackMK" }
+          }
+        },
+        "ChargeBackSC" : {
+            "Type" : "AWS::ServiceCatalog::TagOption",
+            "Condition": "AddTagOptions",
+            "Properties" : {
+              "Active" : true,
+              "Value" : "SUPPLYCHAIN",
+              "Key" : "Chargeback"
+            }
+        },
+        "ChargeBackSCassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "ChargeBackSC" }
+          }
+        },
+        "ChargeBackAccounting" : {
+          "Type" : "AWS::ServiceCatalog::TagOption",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "Active" : true,
+            "Value" : "ACCOUNTING",
+            "Key" : "Chargeback"
+          }
+        },
+        "ChargeBackAccountingassoc":{
+          "Type" : "AWS::ServiceCatalog::TagOptionAssociation",
+          "Condition": "AddTagOptions",
+          "Properties" : {
+            "ResourceId" : { "Fn::FindInMap" : [ "RegionAndPortfolioNameToPortfolioID", { "Ref" : "AWS::Region" }, { "Ref" : "PortfolioName" } ]},
+            "TagOptionId" : { "Ref" : "ChargeBackAccounting" }
+          }
+        }        
+      } 
+}
