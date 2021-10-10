@@ -45,7 +45,7 @@
        "PortfolioName": {
             "Type": "String",
             "Description": "Portfolio Name",
-            "Default": "SCHubPortfolioDemo",
+            "Default": "SCSpokePortfolioDemo",
             "AllowedPattern" : "[a-zA-Z0-9]*",
             "ConstraintDescription" : "must contain only alphanumeric characters."
         },
